@@ -8,6 +8,7 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Canvas;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -21,6 +22,7 @@ import android.support.v4.content.ContextCompat;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
+import android.support.v7.widget.helper.ItemTouchHelper;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -42,6 +44,8 @@ import java.util.List;
 
 import butterknife.BindView;
 import openfoodfacts.github.scrachx.openfood.R;
+import openfoodfacts.github.scrachx.openfood.SwipeControllerActions;
+import openfoodfacts.github.scrachx.openfood.Swipe_Controller;
 import openfoodfacts.github.scrachx.openfood.models.HistoryItem;
 import openfoodfacts.github.scrachx.openfood.models.HistoryProduct;
 import openfoodfacts.github.scrachx.openfood.models.HistoryProductDao;
@@ -58,6 +62,26 @@ public class HistoryScanActivity extends BaseActivity {
     private boolean emptyHistory;
     private HistoryProductDao mHistoryProductDao;
 
+
+    Swipe_Controller swipe_controller = new Swipe_Controller(new SwipeControllerActions() {
+        @Override
+        public void onRightClicked(int position) {
+
+            productItems.remove(position);
+            recyclerHistoryScanView.getAdapter().notifyItemRemoved(position);
+            recyclerHistoryScanView.getAdapter().notifyItemRangeChanged(position,recyclerHistoryScanView.getAdapter().getItemCount());
+        }
+
+        @Override
+        public void onLeftClicked(int position) {
+            productItems.remove(position);
+            recyclerHistoryScanView.getAdapter().notifyItemRemoved(position);
+            recyclerHistoryScanView.getAdapter().notifyItemRangeChanged(position,recyclerHistoryScanView.getAdapter().getItemCount());
+        }
+    });
+    ItemTouchHelper itemTouchHelper = new ItemTouchHelper(swipe_controller);
+
+
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -69,7 +93,18 @@ public class HistoryScanActivity extends BaseActivity {
         mHistoryProductDao = Utils.getAppDaoSession(this).getHistoryProductDao();
         productItems = new ArrayList<>();
         new HistoryScanActivity.FillAdapter(this).execute(this);
+
+
+        itemTouchHelper.attachToRecyclerView(recyclerHistoryScanView);
+        recyclerHistoryScanView.addItemDecoration(new RecyclerView.ItemDecoration() {
+            @Override
+            public void onDraw(Canvas c, RecyclerView parent, RecyclerView.State state) {
+                swipe_controller.onDraw(c);
+            }
+        });
+
     }
+
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
